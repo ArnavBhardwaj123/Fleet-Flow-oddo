@@ -4,6 +4,7 @@ import Layout from './components/Layout'
 import DashboardOverview from './pages/DashboardOverview'
 import VehicleRegistry from './pages/VehicleRegistry'
 import MaintenanceLogs from './pages/MaintenanceLogs'
+import TripDispatcher from './pages/TripDispatcher'
 import Login from './pages/login'
 import Register from './pages/register'
 import './App.css'
@@ -72,7 +73,7 @@ function App() {
       );
     }
 
-    if (path === '/vehicle-registry') {
+    if (path === '/vehicle-registry' || path === '/') {
       return (
         <button className="action-btn secondary" onClick={() => setShowVehicleModal(true)}>
           + New Vehicle
@@ -80,14 +81,9 @@ function App() {
       );
     }
 
-    // Default or Home (/)
+    // Default or Trip Dispatcher
     return (
-      <>
-        <button className="action-btn primary">New Trip</button>
-        <button className="action-btn secondary" onClick={() => setShowVehicleModal(true)}>
-          + New Vehicle
-        </button>
-      </>
+      <button className="action-btn primary">➕ New Trip</button>
     );
   };
 
@@ -116,6 +112,12 @@ function App() {
                 <VehicleRegistry
                   vehicles={vehicles}
                   onDeleteVehicle={handleDeleteVehicle}
+                />
+              } />
+              <Route path="/trip-dispatcher" element={
+                <TripDispatcher
+                  isSidebarOpen={isSidebarOpen}
+                  toggleSidebar={toggleSidebar}
                 />
               } />
               <Route path="/maintenance-logs" element={
