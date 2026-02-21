@@ -26,14 +26,13 @@ const Header = ({ toggleSidebar, children }) => {
     <header className="dashboard-header">
       <div className="header-left">
         <button className="hamburger-btn" onClick={toggleSidebar}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
         </button>
         <div className="search-bar-container">
-          <input type="text" placeholder="Search bar..." className="search-input" />
+          <input type="text" placeholder="Quick search..." className="search-input" />
           <div className="header-filters">
-            <button className="filter-btn">Group by</button>
-            <button className="filter-btn">Filter</button>
-            <button className="filter-btn">Sort by...</button>
+            <button className="filter-btn">Filters</button>
+            <button className="filter-btn">Sort</button>
           </div>
         </div>
       </div>
@@ -43,30 +42,34 @@ const Header = ({ toggleSidebar, children }) => {
           <div
             className="profile-circle"
             onClick={() => setShowDropdown(!showDropdown)}
-            style={{
-              transition: 'transform 0.2s',
-              transform: showDropdown ? 'scale(1.1)' : 'scale(1)'
-            }}
           >
             <img src="/avatar.png" alt="Profile" />
           </div>
 
           {showDropdown && (
-            <div style={{
+            <div className="profile-dropdown" style={{
               position: 'absolute',
-              top: '120%',
+              top: 'calc(100% + 12px)',
               right: '0',
-              background: 'white',
+              background: 'hsl(var(--surface))',
               borderRadius: '16px',
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-              width: '200px',
+              border: '1px solid hsl(var(--border) / 0.8)',
+              boxShadow: 'var(--shadow-lg)',
+              width: '220px',
               zIndex: 1000,
-              padding: '0.5rem',
-              animation: 'slideInUp 0.2s ease-out'
+              padding: '0.625rem',
+              animation: 'slideUp var(--transition-fast)'
             }}>
+              <div style={{ padding: '0.75rem 1rem', marginBottom: '0.5rem' }}>
+                <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: '700', color: 'hsl(var(--text-main))' }}>Arnav Bhardwaj</p>
+                <p style={{ margin: 0, fontSize: '0.75rem', color: 'hsl(var(--text-muted))' }}>Fleet Manager</p>
+              </div>
+
+              <div style={{ height: '1px', background: 'hsl(var(--border) / 0.5)', margin: '0 0.5rem 0.5rem' }}></div>
+
               <button
                 onClick={() => { navigate('/profile'); setShowDropdown(false); }}
+                className="dropdown-item"
                 style={{
                   width: '100%',
                   padding: '0.75rem 1rem',
@@ -76,24 +79,21 @@ const Header = ({ toggleSidebar, children }) => {
                   textAlign: 'left',
                   fontSize: '0.9rem',
                   fontWeight: '600',
-                  color: '#475569',
+                  color: 'hsl(var(--text-muted))',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.75rem',
-                  transition: 'all 0.2s'
+                  transition: 'all var(--transition-fast)'
                 }}
-                onMouseOver={(e) => { e.target.style.background = '#f1f5f9'; e.target.style.color = '#0f172a'; }}
-                onMouseOut={(e) => { e.target.style.background = 'transparent'; e.target.style.color = '#475569'; }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                 My Profile
               </button>
 
-              <div style={{ margin: '0.5rem 0', borderTop: '1px solid #f1f5f9' }}></div>
-
               <button
                 onClick={handleLogout}
+                className="dropdown-item"
                 style={{
                   width: '100%',
                   padding: '0.75rem 1rem',
@@ -103,15 +103,14 @@ const Header = ({ toggleSidebar, children }) => {
                   textAlign: 'left',
                   fontSize: '0.9rem',
                   fontWeight: '600',
-                  color: '#ef4444',
+                  color: 'hsl(var(--danger))',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.75rem',
-                  transition: 'all 0.2s'
+                  transition: 'all var(--transition-fast)',
+                  marginTop: '0.25rem'
                 }}
-                onMouseOver={(e) => { e.target.style.background = '#fef2f2'; }}
-                onMouseOut={(e) => { e.target.style.background = 'transparent'; }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                 Logout

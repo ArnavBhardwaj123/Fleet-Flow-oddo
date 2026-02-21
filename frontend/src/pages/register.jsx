@@ -1,16 +1,27 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import axios from 'axios';
 
 const Register = () => {
-    const [name, setName] = useState('');
+    const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // For now, just bypass
-        navigate('/');
+        try {
+            await axios.post('http://127.0.0.1:8000/api/auth/register/', {
+                username,
+                email,
+                password,
+            });
+            navigate('/login');
+        } catch (err) {
+            setError('Registration failed. Username might be taken.');
+            console.error('Registration error:', err);
+        }
     };
 
     return (
@@ -49,14 +60,15 @@ const Register = () => {
                     <h2 style={{ fontSize: '1.75rem', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.025em' }}>Create Account</h2>
                     <p style={{ color: '#64748b', marginTop: '0.5rem' }}>Join Fleet Flow today</p>
                 </div>
+                {error && <p style={{ color: '#ef4444', marginBottom: '1rem', fontSize: '0.9rem', textAlign: 'center' }}>{error}</p>}
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                     <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <label style={{ fontSize: '0.875rem', fontWeight: '600', color: '#475569' }}>Full Name</label>
+                        <label style={{ fontSize: '0.875rem', fontWeight: '600', color: '#475569' }}>Username</label>
                         <input
                             type="text"
-                            placeholder="John Doe"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
+                            placeholder="johndoe"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
                             style={{
                                 padding: '0.875rem 1rem',
                                 borderRadius: '12px',

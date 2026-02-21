@@ -1,6 +1,7 @@
 
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const styles = {
   container: {
@@ -105,14 +106,28 @@ const styles = {
 };
 
 const Login = () => {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [isEmailFocused, setIsEmailFocused] = useState(false);
   const [isPassFocused, setIsPassFocused] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = () => {
-    localStorage.setItem("isLoggedIn", "true");
-    navigate("/");
-    window.location.reload();
+  const handleLogin = async () => {
+    try {
+      const response = await axios.post("http://127.0.0.1:8000/api/token/", {
+        username,
+        password,
+      });
+      localStorage.setItem("access_token", response.data.access);
+      localStorage.setItem("refresh_token", response.data.refresh);
+      localStorage.setItem("isLoggedIn", "true");
+      navigate("/");
+      window.location.reload();
+    } catch (err) {
+      setError("Invalid credentials. Please try again.");
+      console.error("Login error:", err);
+    }
   };
 
   return (
@@ -129,11 +144,15 @@ const Login = () => {
         <h2 style={styles.title}>Welcome back</h2>
         <p style={styles.subtitle}>Enter your details to access your fleet.</p>
 
+        {error && <p style={{ color: '#ef4444', marginBottom: '1rem', fontSize: '0.9rem' }}>{error}</p>}
+
         <div style={styles.inputGroup}>
           <label style={styles.label}>Username</label>
           <input
             type="text"
             placeholder="Enter your username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             style={{
               ...styles.input,
               ...(isEmailFocused ? styles.inputFocus : {})
@@ -148,6 +167,8 @@ const Login = () => {
           <input
             type="password"
             placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             style={{
               ...styles.input,
               ...(isPassFocused ? styles.inputFocus : {})

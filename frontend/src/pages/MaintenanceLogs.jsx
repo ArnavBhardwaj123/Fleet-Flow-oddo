@@ -3,66 +3,78 @@ import React from 'react';
 const MaintenanceLogs = ({ logs }) => {
     return (
         <section className="registry-section" style={{ background: 'transparent', boxShadow: 'none', border: 'none', padding: 0 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '2.5rem' }}>
-                <div style={{ background: 'white', padding: '1.5rem', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
-                    <p style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: '600', margin: 0, textTransform: 'uppercase' }}>Total Records</p>
-                    <p style={{ fontSize: '1.75rem', fontWeight: '800', margin: '0.5rem 0 0 0', color: '#0f172a' }}>{logs.length}</p>
+            {/* Header for Maintenance */}
+            <div style={{ marginBottom: '2rem' }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: 'hsl(var(--text-main))', margin: 0 }}>Maintenance Ledger</h2>
+                <p style={{ fontSize: '0.875rem', color: 'hsl(var(--text-muted))' }}>Track and manage all vehicle service history</p>
+            </div>
+
+            {/* Stats Row */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
+                <div className="card">
+                    <div className="card-icon" style={{ background: 'hsl(var(--primary-light))', color: 'hsl(var(--primary))' }}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.77 3.77z" /></svg>
+                    </div>
+                    <div className="card-info">
+                        <h3>Total Service Records</h3>
+                        <p className="card-value">{logs.length}</p>
+                    </div>
                 </div>
-                <div style={{ background: 'white', padding: '1.5rem', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
-                    <p style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: '600', margin: 0, textTransform: 'uppercase' }}>Active Issues</p>
-                    <p style={{ fontSize: '1.75rem', fontWeight: '800', margin: '0.5rem 0 0 0', color: '#f97316' }}>{logs.filter(l => l.status === 'New').length}</p>
+                <div className="card">
+                    <div className="card-icon" style={{ background: 'hsl(var(--warning) / 0.1)', color: 'hsl(var(--warning))' }}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+                    </div>
+                    <div className="card-info">
+                        <h3>Unresolved Issues</h3>
+                        <p className="card-value" style={{ color: 'hsl(var(--warning))' }}>{logs.filter(l => l.status === 'New').length}</p>
+                    </div>
                 </div>
-                <div style={{ background: 'white', padding: '1.5rem', borderRadius: '20px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
-                    <p style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: '600', margin: 0, textTransform: 'uppercase' }}>Est. Cost</p>
-                    <p style={{ fontSize: '1.75rem', fontWeight: '800', margin: '0.5rem 0 0 0', color: '#2563eb' }}>$1,240</p>
+                <div className="card">
+                    <div className="card-icon" style={{ background: 'hsl(var(--primary-light))', color: 'hsl(var(--primary))' }}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+                    </div>
+                    <div className="card-info">
+                        <h3>Estimated Costs</h3>
+                        <p className="card-value">₹ 82,400</p>
+                    </div>
                 </div>
             </div>
 
-            <div className="trips-section" style={{ borderRadius: '24px', border: '1px solid #e2e8f0' }}>
-                <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid #f1f5f9' }}>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#0f172a', margin: 0 }}>Maintenance History</h2>
+            <div className="trips-section">
+                <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid hsl(var(--border) / 0.5)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h2 style={{ fontSize: '1.125rem', fontWeight: '800', color: 'hsl(var(--text-main))', margin: 0 }}>System Log Activity</h2>
+                    <button className="filter-btn">Filter Logs</button>
                 </div>
-                <table className="trips-table registry-table">
+                <table className="trips-table">
                     <thead>
                         <tr>
-                            <th>Log ID</th>
-                            <th>Vehicle</th>
-                            <th>Issue/Service</th>
-                            <th>Date</th>
-                            <th>Cost</th>
-                            <th>Status</th>
+                            <th style={{ width: '80px' }}>Log ID</th>
+                            <th>Target Vehicle</th>
+                            <th>Description of Issue</th>
+                            <th>Log Date</th>
+                            <th>Incurred Cost</th>
+                            <th style={{ textAlign: 'right' }}>Current Status</th>
                         </tr>
                     </thead>
                     <tbody>
                         {logs.map((log) => (
-                            <tr key={log.id} style={{ transition: 'all 0.2s' }} className="table-row-hover">
-                                <td style={{ padding: '1.25rem 1.5rem' }}>
-                                    <span style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: '600' }}>#{log.id}</span>
-                                </td>
-                                <td style={{ color: '#334155', fontWeight: '700' }}>{log.vehicle}</td>
-                                <td style={{ color: '#475569' }}>{log.issue}</td>
-                                <td style={{ color: '#64748b' }}>{log.date}</td>
-                                <td style={{ fontWeight: '600', color: '#1e293b' }}>{log.cost}</td>
-                                <td>
-                                    <span className="status" style={{
-                                        background: log.status === 'New' ? '#ecfdf5' : '#fef2f2',
-                                        color: log.status === 'New' ? '#059669' : '#ef4444',
-                                        padding: '6px 14px',
-                                        borderRadius: '8px',
-                                        fontSize: '0.75rem',
-                                        fontWeight: '700',
-                                        letterSpacing: '0.05em',
-                                        display: 'inline-block'
-                                    }}>
-                                        {log.status}
+                            <tr key={log.id} className="table-row-hover">
+                                <td style={{ color: 'hsl(var(--text-muted))', fontWeight: '700', fontSize: '0.8rem' }}>#{log.id}</td>
+                                <td style={{ fontWeight: '800', color: 'hsl(var(--text-main))' }}>{log.vehicle}</td>
+                                <td style={{ fontWeight: '600' }}>{log.issue}</td>
+                                <td style={{ color: 'hsl(var(--text-muted))' }}>{log.date}</td>
+                                <td style={{ fontWeight: '700' }}>₹ {log.cost}</td>
+                                <td style={{ textAlign: 'right' }}>
+                                    <span className={`status-badge ${log.status === 'New' ? 'status-issue' : 'status-done'}`} style={{ fontSize: '0.7rem' }}>
+                                        {log.status === 'New' ? 'AWAITING REPAIR' : 'RESOLVED'}
                                     </span>
                                 </td>
                             </tr>
                         ))}
-                        {logs.length < 5 && Array.from({ length: 5 - logs.length }).map((_, i) => (
-                            <tr key={`empty-m-${i}`}>
-                                <td colSpan="6" style={{ textAlign: 'center', padding: '1.5rem', color: '#cbd5e1' }}>
-                                    <div style={{ width: '8px', height: '8px', background: '#f1f5f9', borderRadius: '50%', margin: '0 auto' }}></div>
+                        {logs.length < 3 && Array.from({ length: 3 - logs.length }).map((_, i) => (
+                            <tr key={`empty-m-${i}`} className="table-row-hover">
+                                <td colSpan="6" style={{ padding: '1.25rem' }}>
+                                    <div className="dot" style={{ margin: '0' }}></div>
                                 </td>
                             </tr>
                         ))}

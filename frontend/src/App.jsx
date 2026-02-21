@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom'
+import api from './api'
 import Layout from './components/Layout'
 import DashboardOverview from './pages/DashboardOverview'
 import VehicleRegistry from './pages/VehicleRegistry'
@@ -20,23 +21,39 @@ function App() {
   const [showExpenseModal, setShowExpenseModal] = useState(false);
   const [showDriverModal, setShowDriverModal] = useState(false);
   const location = useLocation();
-
-  // Shared State (Vehicles, Logs, Trips)
-  const [vehicles, setVehicles] = useState([
-    { id: 1, plate: 'MH 00', model: '2017', type: 'Mini', capacity: '5 tonn', odometer: '79000', status: 'Idle' }
-  ]);
-  const [maintenanceLogs, setMaintenanceLogs] = useState([
-    { id: 321, vehicle: 'TATA', issue: 'Engine Issue', date: '20/02', cost: '10k', status: 'New' }
-  ]);
-  const [expenses, setExpenses] = useState([
-    { id: 1, tripId: '321', driver: 'John', distance: '1000', fuelExpense: '19k', miscExpense: '3k', status: 'Done' }
-  ]);
-  const [drivers, setDrivers] = useState([
-    { id: 1, name: 'John Doe', licenseNumber: '23223', expiryDate: '2026-12-31', completionRate: 92, safetyScore: 89, complaints: 4 }
-  ]);
-  const [showTripForm, setShowTripForm] = useState(false);
   const navigate = useNavigate();
   const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+  const [showTripForm, setShowTripForm] = useState(false);
+
+  // Shared State (Persisted in Django Backend)
+  const [vehicles, setVehicles] = useState([]);
+  const [maintenanceLogs, setMaintenanceLogs] = useState([]);
+  const [expenses, setExpenses] = useState([]);
+  const [drivers, setDrivers] = useState([]);
+
+  // Fetch Data from Backend
+  const fetchData = async () => {
+    try {
+      const [vRes, mRes, eRes, dRes] = await Promise.all([
+        api.get('/management/vehicles/'),
+        api.get('/management/maintenance/'),
+        api.get('/management/expenses/'),
+        api.get('/management/drivers/')
+      ]);
+      setVehicles(vRes.data);
+      setMaintenanceLogs(mRes.data);
+      setExpenses(eRes.data);
+      setDrivers(dRes.data);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchData();
+    }
+  }, [isLoggedIn]);
 
   // Auth Guard: Redirect unauthenticated users
   useEffect(() => {
@@ -60,70 +77,87 @@ function App() {
     setShowTripForm(true);
   };
 
-  const handleAddVehicle = () => {
+  const handleAddVehicle = async () => {
     if (!newVehicle.plate) return;
-    const vehicle = {
-      id: vehicles.length + 1,
-      plate: newVehicle.plate,
-      model: newVehicle.model,
-      type: newVehicle.type,
-      capacity: newVehicle.payload,
-      odometer: newVehicle.odometer,
-      status: 'Idle'
-    };
-    setVehicles([...vehicles, vehicle]);
-    setShowVehicleModal(false);
-    setNewVehicle({ plate: '', payload: '', odometer: '', type: '', model: '' });
+    try {
+      const res = await api.post('/management/vehicles/', {
+        plate: newVehicle.plate,
+        model: newVehicle.model,
+        type: newVehicle.type,
+        capacity: newVehicle.payload,
+        odometer: newVehicle.odometer,
+        status: 'Idle'
+      });
+      setVehicles([...vehicles, res.data]);
+      setShowVehicleModal(false);
+      setNewVehicle({ plate: '', payload: '', odometer: '', type: '', model: '' });
+    } catch (err) {
+      console.error("Error adding vehicle:", err);
+    }
   };
 
-  const handleAddService = () => {
+  const handleAddService = async () => {
     if (!newService.vehicleName) return;
-    const log = {
-      id: Math.floor(Math.random() * 1000),
-      vehicle: newService.vehicleName,
-      issue: newService.issue,
-      date: newService.date,
-      cost: '—',
-      status: 'New'
-    };
-    setMaintenanceLogs([...maintenanceLogs, log]);
-    setShowServiceModal(false);
-    setNewService({ vehicleName: '', issue: '', date: '' });
+    try {
+      const res = await api.post('/management/maintenance/', {
+        vehicle: 1, // Placeholder
+        issue: newService.issue,
+        date: newService.date,
+        cost: '0',
+        status: 'New'
+      });
+      setMaintenanceLogs([...maintenanceLogs, res.data]);
+      setShowServiceModal(false);
+      setNewService({ vehicleName: '', issue: '', date: '' });
+    } catch (err) {
+      console.error("Error adding service:", err);
+    }
   };
 
-  const handleAddExpense = () => {
+  const handleAddExpense = async () => {
     if (!newExpense.tripId) return;
-    const expense = {
-      id: expenses.length + 1,
-      tripId: newExpense.tripId,
-      driver: newExpense.driver,
-      distance: '—',
-      fuelExpense: newExpense.fuelCost,
-      miscExpense: newExpense.miscExpense,
-      status: 'Done'
-    };
-    setExpenses([...expenses, expense]);
-    setShowExpenseModal(false);
-    setNewExpense({ tripId: '', driver: '', fuelCost: '', miscExpense: '' });
+    try {
+      const res = await api.post('/management/expenses/', {
+        trip: 1, // Placeholder
+        fuel_expense: parseFloat(newExpense.fuelCost) || 0,
+        misc_expense: parseFloat(newExpense.miscExpense) || 0,
+        status: 'Done'
+      });
+      setExpenses([...expenses, res.data]);
+      setShowExpenseModal(false);
+      setNewExpense({ tripId: '', driver: '', fuelCost: '', miscExpense: '' });
+    } catch (err) {
+      console.error("Error adding expense:", err);
+    }
   };
 
-  const handleAddDriver = () => {
+  const handleAddDriver = async () => {
     if (!newDriver.name) return;
-    const driver = {
-      id: drivers.length + 1,
-      name: newDriver.name,
-      licenseNumber: newDriver.licenseNumber,
-      expiryDate: newDriver.expiryDate,
-      completionRate: 0,
-      safetyScore: 100,
-      complaints: 0
-    };
-    setDrivers([...drivers, driver]);
-    setShowDriverModal(false);
-    setNewDriver({ name: '', licenseNumber: '', expiryDate: '' });
+    try {
+      const res = await api.post('/management/drivers/', {
+        name: newDriver.name,
+        license_number: newDriver.licenseNumber,
+        expiry_date: newDriver.expiryDate,
+        completion_rate: 0,
+        safety_score: 100,
+        complaints: 0
+      });
+      setDrivers([...drivers, res.data]);
+      setShowDriverModal(false);
+      setNewDriver({ name: '', licenseNumber: '', expiryDate: '' });
+    } catch (err) {
+      console.error("Error adding driver:", err);
+    }
   };
 
-  const handleDeleteVehicle = (id) => setVehicles(vehicles.filter(v => v.id !== id));
+  const handleDeleteVehicle = async (id) => {
+    try {
+      await api.delete(`/management/vehicles/${id}/`);
+      setVehicles(vehicles.filter(v => v.id !== id));
+    } catch (err) {
+      console.error("Error deleting vehicle:", err);
+    }
+  };
 
   const renderHeaderActions = () => {
     const path = location.pathname;
