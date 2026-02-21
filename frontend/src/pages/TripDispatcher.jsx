@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './TripDispatcher.css';
 
-const TripDispatcher = () => {
+const TripDispatcher = ({ showForm, setShowForm }) => {
     const [trips, setTrips] = useState([
         {
             id: 1,
@@ -34,9 +34,8 @@ const TripDispatcher = () => {
         estimatedFuelCost: ''
     });
 
-    const [searchTerm, setSearchTerm] = useState('');
-    const [filterStatus, setFilterStatus] = useState('All');
-    const [showForm, setShowForm] = useState(false);
+    const [searchTerm] = useState('');
+    const [filterStatus] = useState('All');
 
     // Mock data for dropdowns
     const vehicles = [
@@ -129,26 +128,6 @@ const TripDispatcher = () => {
 
     return (
         <div className="dispatcher-content">
-            {/* Action Bar (Replaces redundant Header for searches and filters specific to this page) */}
-            <div className="dispatcher-action-bar" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', gap: '1rem' }}>
-                <div className="search-bar-container" style={{ flex: 1 }}>
-                    <input
-                        type="text"
-                        placeholder="Search trips..."
-                        className="search-input"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        style={{ width: '100%', maxWidth: 'none' }}
-                    />
-                </div>
-                <div className="header-filters" style={{ flex: 'none' }}>
-                    <button className="filter-btn" onClick={() => setFilterStatus('All')}>All</button>
-                    <button className="filter-btn" onClick={() => setFilterStatus('On Trip')}>Active</button>
-                    <button className="filter-btn" onClick={() => setShowForm(!showForm)} style={{ background: '#0f172a', color: 'white', fontWeight: '700' }}>
-                        ➕ New Trip
-                    </button>
-                </div>
-            </div>
             {/* Left Section - Trips Table */}
             <section className={`trips-management ${showForm ? 'form-open' : 'form-closed'}`}>
                 <h2 className="section-title">Active Trips & Fleet Management</h2>
