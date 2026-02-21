@@ -60,7 +60,7 @@ const MaintenanceLogs = ({ logs }) => {
                         {logs.map((log) => (
                             <tr key={log.id} className="table-row-hover">
                                 <td style={{ color: 'hsl(var(--text-muted))', fontWeight: '700', fontSize: '0.8rem' }}>#{log.id}</td>
-                                <td style={{ fontWeight: '800', color: 'hsl(var(--text-main))' }}>{log.vehicle}</td>
+                                <td style={{ fontWeight: '800', color: 'hsl(var(--text-main))' }}>{log.vehicle_plate}</td>
                                 <td style={{ fontWeight: '600' }}>{log.issue}</td>
                                 <td style={{ color: 'hsl(var(--text-muted))' }}>{log.date}</td>
                                 <td style={{ fontWeight: '700' }}>₹ {log.cost}</td>

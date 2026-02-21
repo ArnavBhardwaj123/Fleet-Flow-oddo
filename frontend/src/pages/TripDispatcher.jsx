@@ -1,30 +1,8 @@
 import React, { useState } from 'react';
+import api from '../api';
 import './TripDispatcher.css';
 
-const TripDispatcher = ({ showForm, setShowForm }) => {
-    const [trips, setTrips] = useState([
-        {
-            id: 1,
-            tripId: 'TR-001',
-            fleetType: 'Trailer Truck',
-            origin: 'Mumbai',
-            destination: 'Pune',
-            status: 'On Trip',
-            driver: 'John Doe',
-            vehicle: 'MH-01-AB-1234'
-        },
-        {
-            id: 2,
-            tripId: 'TR-002',
-            fleetType: 'Delivery Van',
-            origin: 'Delhi',
-            destination: 'Gurgaon',
-            status: 'Pending',
-            driver: '-',
-            vehicle: 'DL-05-CD-5678'
-        }
-    ]);
-
+const TripDispatcher = ({ showForm, setShowForm, trips, vehicles, drivers, onTripCreated, searchQuery }) => {
     const [formData, setFormData] = useState({
         vehicle: '',
         cargoWeight: '',
@@ -34,23 +12,7 @@ const TripDispatcher = ({ showForm, setShowForm }) => {
         estimatedFuelCost: ''
     });
 
-    const [searchTerm] = useState('');
     const [filterStatus] = useState('All');
-
-    // Mock data for dropdowns
-    const vehicles = [
-        { id: 1, name: 'Trailer Truck - MH-01-AB-1234', capacity: 5000 },
-        { id: 2, name: 'Delivery Van - DL-05-CD-5678', capacity: 1000 },
-        { id: 3, name: 'Container Truck - KA-03-EF-9012', capacity: 8000 },
-        { id: 4, name: 'Pickup - AP-07-GH-3456', capacity: 500 }
-    ];
-
-    const drivers = [
-        { id: 1, name: 'John Doe', phone: '9876543210', status: 'Available' },
-        { id: 2, name: 'Ahmed Khan', phone: '9765432109', status: 'Available' },
-        { id: 3, name: 'Rajesh Singh', phone: '9654321098', status: 'On Duty' },
-        { id: 4, name: 'Priya Sharma', phone: '9543210987', status: 'Available' }
-    ];
 
     // Handle form input changes
     const handleInputChange = (e) => {
@@ -66,7 +28,7 @@ const TripDispatcher = ({ showForm, setShowForm }) => {
         const selectedVehicle = vehicles.find(v => v.id === parseInt(formData.vehicle));
         const weight = parseInt(formData.cargoWeight);
 
-        if (selectedVehicle && weight > selectedVehicle.capacity) {
+        if (selectedVehicle && selectedVehicle.capacity && weight > parseInt(selectedVehicle.capacity)) {
             alert(`❌ Too Heavy! Maximum capacity: ${selectedVehicle.capacity}kg`);
             return false;
         }
@@ -74,7 +36,7 @@ const TripDispatcher = ({ showForm, setShowForm }) => {
     };
 
     // Submit new trip
-    const handleSubmitTrip = (e) => {
+    const handleSubmitTrip = async (e) => {
         e.preventDefault();
 
         if (!formData.vehicle || !formData.cargoWeight || !formData.driver ||
@@ -87,41 +49,42 @@ const TripDispatcher = ({ showForm, setShowForm }) => {
             return;
         }
 
-        const selectedVehicle = vehicles.find(v => v.id === parseInt(formData.vehicle));
-        const selectedDriver = drivers.find(d => d.id === parseInt(formData.driver));
+        try {
+            await api.post('/management/trips/', {
+                vehicle: parseInt(formData.vehicle),
+                driver: parseInt(formData.driver),
+                start_location: formData.originAddress,
+                end_location: formData.destination,
+                status: 'Planned'
+            });
 
-        const newTrip = {
-            id: trips.length + 1,
-            tripId: `TR-${String(trips.length + 1).padStart(3, '0')}`,
-            fleetType: selectedVehicle.name.split(' - ')[0],
-            origin: formData.originAddress,
-            destination: formData.destination,
-            status: 'Confirmed',
-            driver: selectedDriver.name,
-            vehicle: selectedVehicle.name.split(' - ')[1],
-            cargoWeight: formData.cargoWeight,
-            fuelCost: formData.estimatedFuelCost
-        };
+            // We also need to create an expense entry for this trip if we want to track estimated fuel cost
+            // But the backend Trip model doesn't have fuel cost. Expense does.
+            // For now, let's just create the trip and refresh.
 
-        setTrips([...trips, newTrip]);
-        setFormData({
-            vehicle: '',
-            cargoWeight: '',
-            driver: '',
-            originAddress: '',
-            destination: '',
-            estimatedFuelCost: ''
-        });
+            onTripCreated();
+            setFormData({
+                vehicle: '',
+                cargoWeight: '',
+                driver: '',
+                originAddress: '',
+                destination: '',
+                estimatedFuelCost: ''
+            });
 
-        alert('✅ Trip Created Successfully!');
-        setShowForm(false);
+            alert('✅ Trip Created Successfully!');
+            setShowForm(false);
+        } catch (err) {
+            console.error("Error creating trip:", err);
+            alert("Failed to create trip.");
+        }
     };
 
     // Filter trips
     const filteredTrips = trips.filter(trip => {
-        const matchesSearch = trip.tripId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            trip.driver.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            trip.vehicle.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = trip.id.toString().includes(searchQuery) ||
+            (trip.driver_name && trip.driver_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (trip.vehicle_plate && trip.vehicle_plate.toLowerCase().includes(searchQuery.toLowerCase()));
         const matchesStatus = filterStatus === 'All' || trip.status === filterStatus;
         return matchesSearch && matchesStatus;
     });
@@ -148,12 +111,12 @@ const TripDispatcher = ({ showForm, setShowForm }) => {
                             {filteredTrips.length > 0 ? (
                                 filteredTrips.map((trip) => (
                                     <tr key={trip.id}>
-                                        <td className="trip-id">{trip.tripId}</td>
-                                        <td>{trip.fleetType}</td>
-                                        <td className="origin-dest">{trip.origin}</td>
-                                        <td className="origin-dest">{trip.destination}</td>
-                                        <td>{trip.driver}</td>
-                                        <td className="vehicle-code">{trip.vehicle}</td>
+                                        <td className="trip-id">TR-{String(trip.id).padStart(3, '0')}</td>
+                                        <td>{trip.fleet_type}</td>
+                                        <td className="origin-dest">{trip.start_location}</td>
+                                        <td className="origin-dest">{trip.end_location}</td>
+                                        <td>{trip.driver_name}</td>
+                                        <td className="vehicle-code">{trip.vehicle_plate}</td>
                                         <td>
                                             <span className={`status-badge status-${trip.status.toLowerCase().replace(' ', '-')}`}>
                                                 {trip.status}
@@ -192,7 +155,7 @@ const TripDispatcher = ({ showForm, setShowForm }) => {
                                     <option value="">Choose a vehicle...</option>
                                     {vehicles.map(v => (
                                         <option key={v.id} value={v.id}>
-                                            {v.name} (Capacity: {v.capacity}kg)
+                                            {v.plate} - {v.model} (Cap: {v.capacity}kg)
                                         </option>
                                     ))}
                                 </select>
@@ -224,8 +187,8 @@ const TripDispatcher = ({ showForm, setShowForm }) => {
                                 >
                                     <option value="">Choose a driver...</option>
                                     {drivers.map(d => (
-                                        <option key={d.id} value={d.id} disabled={d.status !== 'Available'}>
-                                            {d.name} {d.status !== 'Available' ? '(On Duty)' : '(Available)'}
+                                        <option key={d.id} value={d.id}>
+                                            {d.name}
                                         </option>
                                     ))}
                                 </select>

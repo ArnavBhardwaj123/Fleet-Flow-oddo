@@ -11,15 +11,48 @@ const Register = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
+
+        // Client-side validation: Check for spaces
+        if (username.includes(' ')) {
+            setError('Usernames cannot contain spaces.');
+            return;
+        }
+
         try {
+            // 1. Register
             await axios.post('http://127.0.0.1:8000/api/auth/register/', {
                 username,
                 email,
                 password,
             });
-            navigate('/login');
+
+            // 2. Auto-Login
+            const loginRes = await axios.post("http://127.0.0.1:8000/api/token/", {
+                username,
+                password,
+            });
+
+            // 3. Store tokens and state
+            localStorage.setItem("access_token", loginRes.data.access);
+            localStorage.setItem("refresh_token", loginRes.data.refresh);
+            localStorage.setItem("isLoggedIn", "true");
+            localStorage.setItem("username", username);
+            localStorage.setItem("user_email", email);
+
+            // 4. Redirect to home (Force reload to refresh all app state)
+            window.location.href = '/';
         } catch (err) {
-            setError('Registration failed. Username might be taken.');
+            if (err.response && err.response.data) {
+                // Parse DRF style errors: { "username": ["..."], "email": ["..."] }
+                const errors = err.response.data;
+                const errorMsg = Object.keys(errors)
+                    .map(key => `${key.charAt(0).toUpperCase() + key.slice(1)}: ${errors[key].join(' ')}`)
+                    .join(' | ');
+                setError(errorMsg || 'Registration failed. Please try again.');
+            } else {
+                setError('Registration failed. Username might be taken.');
+            }
             console.error('Registration error:', err);
         }
     };

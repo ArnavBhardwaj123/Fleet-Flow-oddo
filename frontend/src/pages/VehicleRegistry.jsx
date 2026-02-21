@@ -1,9 +1,34 @@
 import React from 'react';
 
-const VehicleRegistry = ({ vehicles, onDeleteVehicle }) => {
+const VehicleRegistry = ({ vehicles, onDeleteVehicle, searchQuery, filterType, filterStatus, sortBy }) => {
+  // 1. Filter Logic
+  const filteredVehicles = vehicles.filter(v => {
+    const matchesSearch =
+      v.plate.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      v.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      v.type.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesType = filterType === 'All' || v.type === filterType;
+    const matchesStatus = filterStatus === 'All' || v.status === filterStatus;
+
+    return matchesSearch && matchesType && matchesStatus;
+  });
+
+  // 2. Sort Logic
+  const sortedVehicles = [...filteredVehicles].sort((a, b) => {
+    switch (sortBy) {
+      case 'Plate (A-Z)': return a.plate.localeCompare(b.plate);
+      case 'Plate (Z-A)': return b.plate.localeCompare(a.plate);
+      case 'Odometer (Low-High)': return a.odometer - b.odometer;
+      case 'Odometer (High-Low)': return b.odometer - a.odometer;
+      case 'Capacity (High-Low)': return parseInt(b.capacity) - parseInt(a.capacity);
+      default: return 0;
+    }
+  });
+
   return (
     <section className="registry-section" style={{ background: 'transparent', boxShadow: 'none', border: 'none', padding: 0 }}>
-      {/* Mini Stats for Registry */}
+      {/* Mini Stats for Registry (Always showing full fleet counts for context, or can use filtered if preferred) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
         <div className="card">
           <div className="card-icon" style={{ background: 'hsl(var(--primary-light))', color: 'hsl(var(--primary))' }}>
@@ -20,7 +45,7 @@ const VehicleRegistry = ({ vehicles, onDeleteVehicle }) => {
           </div>
           <div className="card-info">
             <h3>Operational Assets</h3>
-            <p className="card-value" style={{ color: 'hsl(var(--success))' }}>{vehicles.filter(v => v.status === 'Idle' || v.status === 'Active').length}</p>
+            <p className="card-value" style={{ color: 'hsl(var(--success))' }}>{vehicles.filter(v => v.status === 'Idle' || v.status === 'Active' || v.status === 'Ready').length}</p>
           </div>
         </div>
         <div className="card">
@@ -36,7 +61,14 @@ const VehicleRegistry = ({ vehicles, onDeleteVehicle }) => {
 
       <div className="trips-section">
         <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid hsl(var(--border) / 0.5)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ fontSize: '1.125rem', fontWeight: '800', color: 'hsl(var(--text-main))', margin: 0 }}>Asset Inventory Management</h2>
+          <div>
+            <h2 style={{ fontSize: '1.125rem', fontWeight: '800', color: 'hsl(var(--text-main))', margin: 0 }}>Asset Inventory Management</h2>
+            {(searchQuery || filterType !== 'All' || filterStatus !== 'All') && (
+              <p style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))', margin: '4px 0 0' }}>
+                Showing {sortedVehicles.length} of {vehicles.length} vehicles
+              </p>
+            )}
+          </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button className="filter-btn">Export CSV</button>
           </div>
@@ -55,37 +87,45 @@ const VehicleRegistry = ({ vehicles, onDeleteVehicle }) => {
             </tr>
           </thead>
           <tbody>
-            {vehicles.map((v, index) => (
-              <tr key={v.id} className="table-row-hover">
-                <td style={{ color: 'hsl(var(--text-muted))', fontWeight: '700', fontSize: '0.75rem' }}>{index + 1}</td>
-                <td style={{ fontWeight: '800', color: 'hsl(var(--text-main))' }}>{v.plate}</td>
-                <td style={{ fontWeight: '600' }}>{v.model}</td>
-                <td>
-                  <span style={{
-                    padding: '4px 8px',
-                    background: 'hsl(var(--background))',
-                    borderRadius: '6px',
-                    fontSize: '0.7rem',
-                    color: 'hsl(var(--text-muted))',
-                    fontWeight: '800',
-                    border: '1px solid hsl(var(--border) / 0.5)'
-                  }}>{v.type}</span>
-                </td>
-                <td style={{ fontWeight: '600', color: 'hsl(var(--text-muted))' }}>{v.capacity}</td>
-                <td style={{ fontWeight: '700', fontSize: '0.9rem' }}>{v.odometer.toLocaleString()} <span style={{ fontSize: '0.7rem', color: 'hsl(var(--text-muted))' }}>km</span></td>
-                <td>
-                  <span className={`status-badge ${v.status === 'Idle' || v.status === 'Active' ? 'status-done' : 'status-issue'}`} style={{ fontSize: '0.7rem' }}>
-                    {v.status}
-                  </span>
-                </td>
-                <td style={{ textAlign: 'right' }}>
-                  <button className="delete-btn" onClick={() => onDeleteVehicle(v.id)} style={{ padding: '0.5rem', opacity: '0.7', transition: 'all 0.2s' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
-                  </button>
+            {sortedVehicles.length > 0 ? (
+              sortedVehicles.map((v, index) => (
+                <tr key={v.id} className="table-row-hover">
+                  <td style={{ color: 'hsl(var(--text-muted))', fontWeight: '700', fontSize: '0.75rem' }}>{index + 1}</td>
+                  <td style={{ fontWeight: '800', color: 'hsl(var(--text-main))' }}>{v.plate}</td>
+                  <td style={{ fontWeight: '600' }}>{v.model}</td>
+                  <td>
+                    <span style={{
+                      padding: '4px 8px',
+                      background: 'hsl(var(--background))',
+                      borderRadius: '6px',
+                      fontSize: '0.7rem',
+                      color: 'hsl(var(--text-muted))',
+                      fontWeight: '800',
+                      border: '1px solid hsl(var(--border) / 0.5)'
+                    }}>{v.type}</span>
+                  </td>
+                  <td style={{ fontWeight: '600', color: 'hsl(var(--text-muted))' }}>{v.capacity}</td>
+                  <td style={{ fontWeight: '700', fontSize: '0.9rem' }}>{v.odometer?.toLocaleString() || '0'} <span style={{ fontSize: '0.7rem', color: 'hsl(var(--text-muted))' }}>km</span></td>
+                  <td>
+                    <span className={`status-badge ${v.status === 'Idle' || v.status === 'Active' || v.status === 'Ready' ? 'status-done' : 'status-issue'}`} style={{ fontSize: '0.7rem' }}>
+                      {v.status}
+                    </span>
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    <button className="delete-btn" onClick={() => onDeleteVehicle(v.id)} style={{ padding: '0.5rem', opacity: '0.7', transition: 'all 0.2s' }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="8" style={{ textAlign: 'center', padding: '3rem', color: 'hsl(var(--text-muted))' }}>
+                  No vehicles match your search or filters.
                 </td>
               </tr>
-            ))}
-            {vehicles.length < 3 && Array.from({ length: 3 - vehicles.length }).map((_, i) => (
+            )}
+            {sortedVehicles.length < 3 && Array.from({ length: 3 - sortedVehicles.length }).map((_, i) => (
               <tr key={`empty-v-${i}`} className="table-row-hover">
                 <td colSpan="8" style={{ padding: '1.25rem' }}>
                   <div className="dot" style={{ margin: '0' }}></div>

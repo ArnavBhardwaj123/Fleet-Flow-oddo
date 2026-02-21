@@ -9,8 +9,8 @@ class Vehicle(models.Model):
     plate = models.CharField(max_length=20, unique=True)
     model = models.CharField(max_length=100)
     type = models.CharField(max_length=50)
-    capacity = models.CharField(max_length=50)
-    odometer = models.CharField(max_length=50)
+    capacity = models.IntegerField(default=0)
+    odometer = models.IntegerField(default=0)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Idle')
 
     def __str__(self):
@@ -40,6 +40,7 @@ class Trip(models.Model):
     end_location = models.CharField(max_length=255)
     start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(null=True, blank=True)
+    revenue = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Planned')
 
     def __str__(self):
@@ -64,7 +65,7 @@ class MaintenanceLog(models.Model):
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name='maintenance_logs')
     issue = models.CharField(max_length=255)
     date = models.CharField(max_length=20)
-    cost = models.CharField(max_length=50)
+    cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='New')
 
     def __str__(self):

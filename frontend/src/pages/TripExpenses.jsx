@@ -59,8 +59,8 @@ const TripExpenses = ({ expenses }) => {
                     <tbody>
                         {expenses.map((expense) => (
                             <tr key={expense.id} className="table-row-hover">
-                                <td style={{ color: 'hsl(var(--text-muted))', fontWeight: '700', fontSize: '0.8rem' }}>#{expense.tripId}</td>
-                                <td style={{ fontWeight: '800', color: 'hsl(var(--text-main))' }}>{expense.driver}</td>
+                                <td style={{ color: 'hsl(var(--text-muted))', fontWeight: '700', fontSize: '0.8rem' }}>#{expense.trip_id_display}</td>
+                                <td style={{ fontWeight: '800', color: 'hsl(var(--text-main))' }}>{expense.driver_name}</td>
                                 <td style={{ fontWeight: '700' }}>{expense.distance} <span style={{ fontSize: '0.7rem', color: 'hsl(var(--text-muted))' }}>KM</span></td>
                                 <td style={{ color: 'hsl(var(--danger))', fontWeight: '800' }}>₹ {expense.fuelExpense}</td>
                                 <td style={{ color: 'hsl(var(--text-muted))', fontWeight: '600' }}>₹ {expense.miscExpense}</td>

@@ -122,10 +122,14 @@ const Login = () => {
       localStorage.setItem("access_token", response.data.access);
       localStorage.setItem("refresh_token", response.data.refresh);
       localStorage.setItem("isLoggedIn", "true");
-      navigate("/");
-      window.location.reload();
+      localStorage.setItem("username", username);
+      window.location.href = "/";
     } catch (err) {
-      setError("Invalid credentials. Please try again.");
+      if (err.response && err.response.data && err.response.data.detail) {
+        setError(err.response.data.detail);
+      } else {
+        setError("Invalid credentials. Please try again.");
+      }
       console.error("Login error:", err);
     }
   };

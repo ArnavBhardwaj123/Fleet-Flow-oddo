@@ -22,7 +22,15 @@ function App() {
   const [showDriverModal, setShowDriverModal] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+  const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem("isLoggedIn") === "true");
+
+  // Double-check localStorage on mount/location change to avoid stale state issues
+  useEffect(() => {
+    const current = localStorage.getItem("isLoggedIn") === "true";
+    if (current !== isLoggedIn) {
+      setIsLoggedIn(current);
+    }
+  }, [location.pathname]);
   const [showTripForm, setShowTripForm] = useState(false);
 
   // Shared State (Persisted in Django Backend)
@@ -30,23 +38,59 @@ function App() {
   const [maintenanceLogs, setMaintenanceLogs] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [drivers, setDrivers] = useState([]);
+  const [trips, setTrips] = useState([]);
+  const [userProfile, setUserProfile] = useState(null);
+  const [analyticsData, setAnalyticsData] = useState(null);
 
-  // Fetch Data from Backend
+  // Filter & Sort State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState('All');
+  const [filterStatus, setFilterStatus] = useState('All');
+  const [sortBy, setSortBy] = useState('Default');
+
+  // Handle Login State Changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setIsLoggedIn(localStorage.getItem("isLoggedIn") === "true");
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Fetch Data from Backend (Decoupled to prevent one failure from blocking everything)
   const fetchData = async () => {
-    try {
-      const [vRes, mRes, eRes, dRes] = await Promise.all([
-        api.get('/management/vehicles/'),
-        api.get('/management/maintenance/'),
-        api.get('/management/expenses/'),
-        api.get('/management/drivers/')
-      ]);
-      setVehicles(vRes.data);
-      setMaintenanceLogs(mRes.data);
-      setExpenses(eRes.data);
-      setDrivers(dRes.data);
-    } catch (err) {
-      console.error("Error fetching data:", err);
-    }
+    if (!isLoggedIn) return;
+
+    const endpoints = {
+      vehicles: '/management/vehicles/',
+      maintenance: '/management/maintenance/',
+      expenses: '/management/expenses/',
+      drivers: '/management/drivers/',
+      trips: '/management/trips/',
+      profile: '/auth/profile/',
+      analytics: '/management/analytics/'
+    };
+
+    const setters = {
+      vehicles: setVehicles,
+      maintenance: setMaintenanceLogs,
+      expenses: setExpenses,
+      drivers: setDrivers,
+      trips: setTrips,
+      analytics: setAnalyticsData,
+      profile: (data) => {
+        if (data && data.length > 0) setUserProfile(data[0]);
+      }
+    };
+
+    Object.entries(endpoints).forEach(async ([key, url]) => {
+      try {
+        const res = await api.get(url);
+        setters[key](res.data);
+      } catch (err) {
+        console.error(`Error fetching ${key}:`, err);
+      }
+    });
   };
 
   useEffect(() => {
@@ -59,8 +103,10 @@ function App() {
   useEffect(() => {
     if (!isLoggedIn && location.pathname !== '/login' && location.pathname !== '/register') {
       navigate('/login');
+    } else if (isLoggedIn && (location.pathname === '/login' || location.pathname === '/register')) {
+      navigate('/');
     }
-  }, [isLoggedIn, location.pathname, navigate]);
+  }, [isLoggedIn, location.pathname]);
 
   // Form States
   const [newVehicle, setNewVehicle] = useState({ plate: '', payload: '', odometer: '', type: '', model: '' });
@@ -100,13 +146,14 @@ function App() {
     if (!newService.vehicleName) return;
     try {
       const res = await api.post('/management/maintenance/', {
-        vehicle: 1, // Placeholder
+        vehicle: parseInt(newService.vehicleName), // This will be the vehicle ID from dropdown
         issue: newService.issue,
         date: newService.date,
         cost: '0',
         status: 'New'
       });
-      setMaintenanceLogs([...maintenanceLogs, res.data]);
+      // Refresh data to get the vehicle_plate from serializer
+      fetchData();
       setShowServiceModal(false);
       setNewService({ vehicleName: '', issue: '', date: '' });
     } catch (err) {
@@ -118,12 +165,13 @@ function App() {
     if (!newExpense.tripId) return;
     try {
       const res = await api.post('/management/expenses/', {
-        trip: 1, // Placeholder
+        trip: parseInt(newExpense.tripId), // This will be the trip ID from dropdown
         fuel_expense: parseFloat(newExpense.fuelCost) || 0,
         misc_expense: parseFloat(newExpense.miscExpense) || 0,
         status: 'Done'
       });
-      setExpenses([...expenses, res.data]);
+      // Refresh data to get the driver_name from serializer
+      fetchData();
       setShowExpenseModal(false);
       setNewExpense({ tripId: '', driver: '', fuelCost: '', miscExpense: '' });
     } catch (err) {
@@ -233,18 +281,33 @@ function App() {
               isSidebarOpen={isSidebarOpen}
               toggleSidebar={toggleSidebar}
               headerActions={renderHeaderActions()}
+              userProfile={userProfile}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              filterType={filterType}
+              setFilterType={setFilterType}
+              filterStatus={filterStatus}
+              setFilterStatus={setFilterStatus}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
             >
               <Routes>
                 <Route path="/" element={
                   <DashboardOverview
                     vehiclesCount={vehicles.length}
                     maintenanceCount={maintenanceLogs.length}
+                    trips={trips}
+                    searchQuery={searchQuery}
                   />
                 } />
                 <Route path="/vehicle-registry" element={
                   <VehicleRegistry
                     vehicles={vehicles}
                     onDeleteVehicle={handleDeleteVehicle}
+                    searchQuery={searchQuery}
+                    filterType={filterType}
+                    filterStatus={filterStatus}
+                    sortBy={sortBy}
                   />
                 } />
                 <Route path="/trip-dispatcher" element={
@@ -253,6 +316,11 @@ function App() {
                     toggleSidebar={toggleSidebar}
                     showForm={showTripForm}
                     setShowForm={setShowTripForm}
+                    trips={trips}
+                    vehicles={vehicles}
+                    drivers={drivers}
+                    onTripCreated={fetchData}
+                    searchQuery={searchQuery}
                   />
                 } />
                 <Route path="/maintenance-logs" element={
@@ -270,8 +338,8 @@ function App() {
                     drivers={drivers}
                   />
                 } />
-                <Route path="/analytics" element={<Analytics />} />
-                <Route path="/profile" element={<Profile />} />
+                <Route path="/analytics" element={<Analytics analyticsData={analyticsData} />} />
+                <Route path="/profile" element={<Profile onProfileUpdate={fetchData} />} />
               </Routes>
             </Layout>
           ) : (
@@ -309,8 +377,17 @@ function App() {
             </div>
             <div className="modal-body">
               <div className="form-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}>
-                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Vehicle Name</label>
-                <input type="text" placeholder="e.g. TATA" value={newService.vehicleName} onChange={(e) => setNewService({ ...newService, vehicleName: e.target.value })} style={{ width: '100%', padding: '0.875rem' }} />
+                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Vehicle</label>
+                <select
+                  value={newService.vehicleName}
+                  onChange={(e) => setNewService({ ...newService, vehicleName: e.target.value })}
+                  style={{ width: '100%', padding: '0.875rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}
+                >
+                  <option value="">Select Vehicle</option>
+                  {vehicles.map(v => (
+                    <option key={v.id} value={v.id}>{v.plate} - {v.model}</option>
+                  ))}
+                </select>
               </div>
               <div className="form-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}>
                 <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Issue/Service</label>
@@ -337,10 +414,19 @@ function App() {
             </div>
             <div className="modal-body">
               <div className="form-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}>
-                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Trip ID</label>
-                <input type="text" placeholder="e.g. 321" value={newExpense.tripId} onChange={(e) => setNewExpense({ ...newExpense, tripId: e.target.value })} style={{ width: '100%', padding: '0.875rem' }} />
+                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Trip</label>
+                <select
+                  value={newExpense.tripId}
+                  onChange={(e) => setNewExpense({ ...newExpense, tripId: e.target.value })}
+                  style={{ width: '100%', padding: '0.875rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}
+                >
+                  <option value="">Select Trip</option>
+                  {trips.map(t => (
+                    <option key={t.id} value={t.id}>Trip #{t.id} - {t.vehicle_plate}</option>
+                  ))}
+                </select>
               </div>
-              <div className="form-group" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}>
+              <div className="form-group" style={{ display: 'none' }}>
                 <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Driver</label>
                 <input type="text" placeholder="e.g. John" value={newExpense.driver} onChange={(e) => setNewExpense({ ...newExpense, driver: e.target.value })} style={{ width: '100%', padding: '0.875rem' }} />
               </div>

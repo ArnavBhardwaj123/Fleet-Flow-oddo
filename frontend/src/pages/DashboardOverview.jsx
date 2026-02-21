@@ -1,8 +1,15 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const DashboardOverview = ({ vehiclesCount, maintenanceCount }) => {
+const DashboardOverview = ({ vehiclesCount, maintenanceCount, trips, searchQuery }) => {
   const navigate = useNavigate();
+
+  const filteredTrips = trips.filter(trip =>
+    trip.id.toString().includes(searchQuery) ||
+    trip.driver_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    trip.vehicle_plate?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    trip.status?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <>
@@ -75,18 +82,29 @@ const DashboardOverview = ({ vehiclesCount, maintenanceCount }) => {
             </tr>
           </thead>
           <tbody>
-            <tr className="table-row-hover">
-              <td style={{ fontWeight: '700' }}>#TRP-4521</td>
-              <td style={{ color: 'hsl(var(--text-muted))' }}>TATA Intra V30 (MH 00)</td>
-              <td style={{ fontWeight: '600' }}>John Doe</td>
-              <td><span className="status-badge status-on-trip">On Trip</span></td>
-            </tr>
-            {[2, 3, 4, 5].map((i) => (
-              <tr key={i} className="table-row-hover">
-                <td style={{ color: 'hsl(var(--border))' }}>#TRP-000{i}</td>
-                <td style={{ color: 'hsl(var(--border))' }}>•••••••••••••••</td>
-                <td style={{ color: 'hsl(var(--border))' }}>—</td>
-                <td><div className="dot" style={{ margin: '0' }}></div></td>
+            {filteredTrips.length > 0 ? (
+              filteredTrips.slice(0, 5).map((trip) => (
+                <tr key={trip.id} className="table-row-hover">
+                  <td style={{ fontWeight: '700' }}>#TRP-{String(trip.id).padStart(4, '0')}</td>
+                  <td style={{ color: 'hsl(var(--text-muted))' }}>{trip.vehicle_plate || '—'}</td>
+                  <td style={{ fontWeight: '600' }}>{trip.driver_name || '—'}</td>
+                  <td>
+                    <span className={`status-badge status-${trip.status.toLowerCase().replace(' ', '-')}`}>
+                      {trip.status}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="4" style={{ textAlign: 'center', padding: '1rem', color: 'hsl(var(--text-muted))' }}>
+                  {searchQuery ? 'No trips match your search.' : 'No recent trips found.'}
+                </td>
+              </tr>
+            )}
+            {filteredTrips.length < 5 && Array.from({ length: 5 - filteredTrips.length }).map((_, i) => (
+              <tr key={`placeholder-${i}`} className="table-row-hover">
+                <td colSpan="4"><div className="dot" style={{ margin: '0' }}></div></td>
               </tr>
             ))}
           </tbody>
